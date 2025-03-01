@@ -4,6 +4,8 @@ import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.animation.Timeline;
@@ -31,8 +33,18 @@ public class Main extends Application {
         timeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> updateTime()));
         timeline.setCycleCount(Timeline.INDEFINITE);
 
-        VBox root = new VBox(10, startTimerButton, createInvoiceButton, timeLabel);
-        Scene scene = new Scene(root, 300, 200);
+        VBox timeBox = new VBox(10, startTimerButton, createInvoiceButton, timeLabel);
+
+        //Tabs
+        TabPane tabPane = new TabPane();
+        Tab timeTab = new Tab("Zeit", timeBox);
+        Tab customersTab = new Tab("Kunden", new Label("KundenBereich - soon"));
+        Tab tasksTab = new Tab("Aufgaben", new Label("AufgabenBereich - soon"));
+        Tab statsTab = new Tab("Statistik", new Label("StatistikBereich - soon"));
+
+        tabPane.getTabs().addAll(timeTab, customersTab, tasksTab, statsTab);
+
+        Scene scene = new Scene(tabPane, 300, 200);
         primaryStage.setTitle("FreelanceFlow");
         primaryStage.setScene(scene);
         primaryStage.show();
