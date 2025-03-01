@@ -12,28 +12,36 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
 public class Main extends Application {
-    private Label timeLabel;
-    private Button startTimerButton;
-    private LocalDateTime startTime;
-    private Timeline timeline;
+    private Label timeLabel; //TimeLabel initialieseren
+    private Button startTimerButton; //Button initialieseren
+    private LocalDateTime startTime; //LocalDateTIme initialieseren
+    private Timeline timeline; //TimeLine initialieseren
     private boolean isRunning = false;
 
     @Override
     public void start(Stage primaryStage) {
-        startTimerButton = new Button("Timer starten");
-        timeLabel = new Label("Zeit heute: 00:00:00");
+    TabPane tabPane = createTabs();
+    Scene scene = new Scene(tabPane, 500, 400);
+    primaryStage.setTitle("FreelanceFlow");
+    primaryStage.setScene(scene);
+    primaryStage.show();
+    }
 
-        startTimerButton.setOnAction(e -> toggleTimer());
+    private TabPane createTabs(){
+        startTimerButton = new Button("Timer starten"); //Timer-Button einfügen
+        timeLabel = new Label("Zeit heute: 00:00:00"); //Time Label einfügen. Zählt die gerabeitete Zeit
+
+        startTimerButton.setOnAction(e -> toggleTimer()); //On Click, Timer startet
 
 
-        timeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> updateTime()));
+        timeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> updateTime())); //Programm Refresh für Timer
         timeline.setCycleCount(Timeline.INDEFINITE);
 
-        VBox timeBox = new VBox(10, startTimerButton, timeLabel);
-        timeBox.setSpacing(15);
+        VBox timeBox = new VBox(10, startTimerButton, timeLabel); //Time-Box Window
+        timeBox.setSpacing(15); //Zeilen Abstand
 
-        //Tabs
         TabPane tabPane = new TabPane();
+        //Tabs
         Tab timeTab = new Tab("Zeit", timeBox);
         timeTab.setClosable(false);
 
@@ -55,6 +63,7 @@ public class Main extends Application {
         //TasksTab
         VBox tasksBox = new VBox(10);
         tasksBox.getChildren().add(new TextField("Aufgabe eingeben"));
+        tasksBox.setSpacing(15);
         Tab tasksTab = new Tab("Aufgaben", tasksBox);
         tasksTab.setClosable(false);
 
@@ -64,13 +73,9 @@ public class Main extends Application {
         Tab statsTab = new Tab("Statistik", statsBox);
         statsTab.setClosable(false);
 
-
         tabPane.getTabs().addAll(timeTab, customersTab, tasksTab, statsTab);
 
-        Scene scene = new Scene(tabPane, 500, 400);
-        primaryStage.setTitle("FreelanceFlow");
-        primaryStage.setScene(scene);
-        primaryStage.show();
+        return tabPane;
     }
 
     private void toggleTimer() {
