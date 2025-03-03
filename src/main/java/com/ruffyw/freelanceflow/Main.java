@@ -8,11 +8,13 @@ import javafx.stage.Stage;
 import javafx.animation.Timeline;
 import javafx.animation.KeyFrame;
 import javafx.util.Duration;
-
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
 
 public class Main extends Application {
     private Label timeLabel; //TimeLabel initialieseren
@@ -54,7 +56,9 @@ public class Main extends Application {
         VBox customerBox = new VBox(10);
         Button bill = new Button("Rechnung erstellen");
         Label billStatus = new Label("Keine Rechnung");
-        bill.setOnAction(e -> billStatus.setText("Rechnung wird erstellt"));
+        bill.setOnAction(e ->{
+        billStatus.setText("Rechnung wird erstellt");
+        createInvoice();});
         customerBox.getChildren().addAll(
                 new Label("Kundenliste noch in der Entwicklung"),
                 new Label("Noch in Entwicklung"),
@@ -120,6 +124,16 @@ public class Main extends Application {
     }
 
     private void saveTime(LocalDateTime start, LocalDateTime end) {
+        int logCount = getLogCount();
+        if (logCount >= 10) {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle("Limit erreicht");
+            alert.setHeaderText("Maximale Einträge in der kostenlosen Version");
+            alert.setContentText("Bitte upgraden Sie für unbegrenzte Einträge.");
+            alert.showAndWait();
+            return;
+        }
+
         try (Connection conn = DriverManager.getConnection("jdbc:sqlite:timelog.db")){
             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO time_logs (start_time, end_time) VALUES  (?, ?)");
             pstmt.setString(1, start.toString());
@@ -154,6 +168,54 @@ public class Main extends Application {
         } catch (Exception e) {
             System.out.println("Fehler: " + e.getMessage());
         }
+    }
+
+    private void createInvoice() {
+        try (PDDocument document = new PDDocument()) {
+            PDPage page = new PDPage();
+            document.addPage(page);
+            PDPageContentStream contentStream = new PDPageContentStream(document, page);
+            contentStream.beginText();
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, 12);
+            contentStream.newLineAtOffset(100, 700);
+            contentStream.showText("Rechnung");
+            contentStream.newLineAtOffset(0, -20);
+            contentStream.showText("Timer-Daten:");
+            contentStream.newLineAtOffset(0, -20);
+
+            // Daten aus time_logs einfügen
+            try (Connection conn = DriverManager.getConnection("jdbc:sqlite:timelog.db")) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT * FROM time_logs");
+                while (rs.next()) {
+                    String entry = "ID: " + rs.getInt("id") + ", Start: " + rs.getString("start_time") + ", End: " + rs.getString("end_time");
+                    contentStream.showText(entry);
+                    contentStream.newLineAtOffset(0, -20);
+                }
+            } catch (SQLException e) {
+                System.out.println("Datenbankfehler: " + e.getMessage());
+            }
+
+            contentStream.endText();
+            contentStream.close();
+            document.save("rechnung.pdf");
+            System.out.println("Rechnung erstellt");
+        } catch (Exception e) {
+            System.out.println("Fehler: " + e.getMessage());
+        }
+    }
+
+    private int getLogCount() {
+        try (Connection conn = DriverManager.getConnection("jdbc:sqlite:timelog.db")) {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM time_logs");
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            System.out.println("Fehler: " + e.getMessage());
+        }
+        return 0;
     }
 
     public static void main(String[] args) {
